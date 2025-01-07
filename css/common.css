@@ -1,0 +1,35 @@
+body {
+    padding-top: 105px; /* Altura del navbar + margen extra */
+}
+
+/* Ajuste para dispositivos móviles */
+@media (max-width: 768px) {
+    body {
+        padding-top: 85px;
+    }
+}
+
+/* Estilos para Ranking de Ventas */
+#rankingVentas h6 {
+    color: var(--primary-color);
+}
+
+#rankingVentas img {
+    object-fit: cover;
+    border-radius: 8px;
+}
+
+#rankingVentas strong {
+    font-size: 1rem;
+}
+
+#rankingVentas div {
+    font-size: 0.9rem;
+}
+
+/* Asegurar que el Stock Total esté bien estilizado */
+#totalStock {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--primary-color);
+}

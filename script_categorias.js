@@ -1,11 +1,3 @@
-// Funciones para manejar la visualización de secciones
-function showSection(sectionId) {
-    document.querySelectorAll('.section').forEach(section => {
-        section.style.display = 'none';
-    });
-    document.getElementById(sectionId).style.display = 'block';
-}
-
 // Modificar la función loadCategorias para el nuevo diseño
 async function loadCategorias() {
     try {
@@ -41,55 +33,12 @@ async function loadCategorias() {
     }
 }
 
-// Cargar pasteles
-// Modificar la función loadPasteles para el nuevo diseño
-async function loadPasteles() {
-    try {
-        const response = await fetch('api/pasteles.php');
-        const pasteles = await response.json();
-        
-        const pastelesList = document.getElementById('pastelesList');
-        pastelesList.innerHTML = '';
-        
-        pasteles.forEach(pastel => {
-            const col = document.createElement('div');
-            col.className = 'col-md-4 mb-4';
-            col.innerHTML = `
-                <div class="card h-100 pastel-card">
-                    <img src="${pastel.imagen || 'https://via.placeholder.com/300x200?text=Sin+Imagen'}" 
-                         class="card-img-top pastel-image" 
-                         alt="${pastel.nombre}">
-                    <div class="card-body">
-                        <h5 class="card-title">${pastel.nombre}</h5>
-                        <p class="card-text">${pastel.descripcion || 'Sin descripción'}</p>
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <span class="badge bg-primary">$${parseFloat(pastel.precio).toFixed(2)}</span>
-                            <span class="badge bg-secondary">Stock: ${pastel.stock}</span>
-                        </div>
-                        <p class="card-text"><small class="text-muted">Categoría: ${pastel.categoria_nombre}</small></p>
-                    </div>
-                    <div class="card-footer bg-white border-0">
-                        <div class="btn-group w-100">
-                            <button onclick="editPastel(${pastel.id_pastel})" class="btn btn-primary">
-                                <i class="fas fa-edit"></i> Editar
-                            </button>
-                            <button onclick="deletePastel(${pastel.id_pastel})" class="btn btn-danger">
-                                <i class="fas fa-trash"></i> Eliminar
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            `;
-            pastelesList.appendChild(col);
-        });
-    } catch (error) {
-        showNotification('Error', 'No se pudieron cargar los pasteles', 'error');
-    }
-}
-
 async function createCategoria(event) {
     event.preventDefault();
     
+    console.log(document.getElementById('categoriaNombre').value)
+    console.log(document.getElementById('categoriaDescripcion').value)
+
     const data = {
         nombre: document.getElementById('categoriaNombre').value,
         descripcion: document.getElementById('categoriaDescripcion').value
@@ -105,12 +54,17 @@ async function createCategoria(event) {
         });
 
         const result = await response.json();
-        alert(result.message);
-        loadCategorias();
-        loadCategoriasSelect(); // Agregamos esta línea
-        document.getElementById('categoriaForm').reset();
+        
+        if(result.status === "success") {
+            showNotification('¡Éxito!', result.message);
+            loadCategorias();
+            document.getElementById('categoriaForm').reset();
+        } else {
+            showNotification('Error', result.message, 'error');
+        }
     } catch (error) {
         console.error('Error:', error);
+        showNotification('Error', 'Ocurrió un error al crear la categoría.', 'error');
     }
 }
 
@@ -138,33 +92,58 @@ async function deleteCategoria(id) {
             });
 
             const data = await response.json();
-            showNotification('¡Éxito!', data.message);
-            loadCategorias();
-            loadCategoriasSelect();
-            updateDashboard();
+            
+            // Verificar si la operación fue exitosa basándonos en el mensaje
+            if (data.message && data.message.includes("exitosamente")) {
+                showNotification('¡Éxito!', data.message, 'success');
+                loadCategorias();
+                // Actualizar otros elementos si es necesario
+                if (typeof updateDashboard === 'function') {
+                    updateDashboard();
+                }
+            } else {
+                showNotification('Error', 'No se pudo eliminar la categoría', 'error');
+            }
         } catch (error) {
-            showNotification('Error', 'No se pudo eliminar la categoría', 'error');
+            console.error('Error:', error);
+            showNotification('Error', 'Ocurrió un error al eliminar la categoría', 'error');
         }
     }
 }
 
+// Agregar variable global para controlar el estado del formulario
+let isEditing = false;
+let editingId = null;
 
 async function editCategoria(id) {
     try {
         const response = await fetch(`api/categorias.php?id=${id}`);
         const categoria = await response.json();
 
-
-        console.log(categoria);
-
         document.getElementById('categoriaNombre').value = categoria[0].nombre;
         document.getElementById('categoriaDescripcion').value = categoria[0].descripcion;
         
-        // Cambiar el formulario para modo edición
-        const form = document.getElementById('categoriaForm');
-        form.onsubmit = (e) => updateCategoria(e, id);
+        // Marcar que estamos en modo edición
+        isEditing = true;
+        editingId = id;
+        
+        // Cambiar el texto del botón
+        const submitButton = document.querySelector('#categoriaForm button[type="submit"]');
+        submitButton.innerHTML = '<i class="fas fa-save me-2"></i>Actualizar Categoría';
     } catch (error) {
         console.error('Error:', error);
+    }
+}
+
+async function handleFormSubmit(event) {
+    event.preventDefault();
+    
+    console.log('Entra a la funcion handleFormSubmit')
+
+    if (isEditing) {
+        await updateCategoria(event, editingId);
+    } else {
+        await createCategoria(event);
     }
 }
 
@@ -187,16 +166,24 @@ async function updateCategoria(event, id) {
         });
 
         const result = await response.json();
-        alert(result.message);
+        showNotification('¡Éxito!', result.message);
+        resetForm();
         loadCategorias();
-        document.getElementById('categoriaForm').reset();
-        
-        // Restaurar el formulario a modo creación
-        const form = document.getElementById('categoriaForm');
-        form.onsubmit = createCategoria;
     } catch (error) {
         console.error('Error:', error);
+        showNotification('Error', 'No se pudo actualizar la categoría', 'error');
     }
+}
+
+function resetForm() {
+    // Restablecer el formulario y el estado
+    document.getElementById('categoriaForm').reset();
+    isEditing = false;
+    editingId = null;
+    
+    // Restablecer el texto del botón
+    const submitButton = document.querySelector('#categoriaForm button[type="submit"]');
+    submitButton.innerHTML = '<i class="fas fa-save me-2"></i>Guardar Categoría';
 }
 
 // Funciones para manejar pasteles
@@ -318,26 +305,6 @@ async function deletePastel(id) {
     }
 }
 
-// Función para cargar categorías en el select
-async function loadCategoriasSelect() {
-    try {
-        const response = await fetch('api/categorias.php');
-        const categorias = await response.json();
-        
-        const selectCategoria = document.getElementById('pastelCategoria');
-        selectCategoria.innerHTML = '<option value="">Seleccione una categoría</option>';
-        
-        categorias.forEach(categoria => {
-            const option = document.createElement('option');
-            option.value = categoria.id_categoria;
-            option.textContent = categoria.nombre;
-            selectCategoria.appendChild(option);
-        });
-    } catch (error) {
-        console.error('Error:', error);
-    }
-}
-
 // Función para mostrar notificaciones
 function showNotification(title, message, type = 'success') {
     Swal.fire({
@@ -349,42 +316,6 @@ function showNotification(title, message, type = 'success') {
         showConfirmButton: false,
         timer: 3000
     });
-}
-
-// Función para actualizar el dashboard
-async function updateDashboard() {
-    try {
-        const [pasteles, categorias] = await Promise.all([
-            fetch('api/pasteles.php').then(r => r.json()),
-            fetch('api/categorias.php').then(r => r.json())
-        ]);
-
-        document.getElementById('totalPasteles').textContent = pasteles.length;
-        document.getElementById('totalCategorias').textContent = categorias.length;
-
-        const valorTotal = pasteles.reduce((acc, pastel) => {
-            return acc + (pastel.precio * pastel.stock);
-        }, 0);
-        document.getElementById('valorInventario').textContent = `$${valorTotal.toFixed(2)}`;
-    } catch (error) {
-        console.error('Error:', error);
-    }
-}
-
-
-// Función para mostrar/ocultar secciones con animación
-function showSection(sectionId) {
-    document.querySelectorAll('.section').forEach(section => {
-        section.style.display = 'none';
-    });
-    const selectedSection = document.getElementById(sectionId);
-    selectedSection.style.display = 'block';
-    selectedSection.classList.add('fade-in');
-    
-    // Actualizar el dashboard si es la sección seleccionada
-    if(sectionId === 'dashboard') {
-        updateDashboard();
-    }
 }
 
 // Función para validar formularios
@@ -420,44 +351,12 @@ function previewImage(input) {
 // Inicialización cuando el DOM está listo
 document.addEventListener('DOMContentLoaded', () => {
     // Mostrar dashboard por defecto
-    showSection('dashboard');
     
     // Cargar datos iniciales
     loadCategorias();
-    loadPasteles();
-    loadCategoriasSelect();
-    updateDashboard();
+    // Cambiar el listener del formulario para usar la nueva función handleFormSubmit
+    console.log('Entra a la funcion handleFormSubmit')
+    document.getElementById('categoriaForm').addEventListener('submit', handleFormSubmit);
     
-    // Configurar los formularios con validación
-    const forms = document.querySelectorAll('form');
-    forms.forEach(form => {
-        form.addEventListener('submit', event => {
-            if (!validateForm(form.id)) {
-                event.preventDefault();
-                event.stopPropagation();
-            }
-        });
-    });
-    
-    // Configurar los eventos de los formularios
-    document.getElementById('categoriaForm').onsubmit = createCategoria;
-    document.getElementById('pastelForm').onsubmit = createPastel;
-    
-    // Configurar tooltips de Bootstrap
-    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-    tooltipTriggerList.map(function (tooltipTriggerEl) {
-        return new bootstrap.Tooltip(tooltipTriggerEl);
-    });
 
-    if(document.getElementById('dashboard')) {
-        showSection('dashboard');
-        updateDashboard();
-    }
-    if(document.getElementById('pastelesList')) {
-        loadPasteles();
-    }
-    if(document.getElementById('pastelForm')) {
-        loadCategoriasSelect();
-    }
 });
-

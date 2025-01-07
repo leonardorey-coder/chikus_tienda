@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Formulario de Productos</title>
+        <!-- Bootstrap 5 CSS -->
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+        <!-- Font Awesome -->
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+        
+        <!-- Google Fonts -->
+        <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+        
+        <!-- SweetAlert2 -->
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11.0.19/dist/sweetalert2.min.css">
+        
+        <!-- Custom CSS -->
+        <link rel="stylesheet" href="css/common.css">
+        
+        <style>
+            :root {
+                --primary-color: #FF69B4;
+                --secondary-color: #FF1493;
+                --background-color: #FFF0F5;
+                --text-color: #333;
+            }
+    
+            body {
+                font-family: 'Poppins', sans-serif;
+                background-color: var(--background-color);
+                color: var(--text-color);
+            }
+    
+            .navbar {
+                background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+                box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            }
+    
+            .navbar-brand {
+                font-size: 1.8rem;
+                font-weight: 700;
+                color: white !important;
+            }
+    
+            .card {
+                border: none;
+                border-radius: 15px;
+                box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+                transition: transform 0.3s ease;
+            }
+    
+            .card:hover {
+                transform: translateY(-5px);
+            }
+    
+            .card-header {
+                background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+                color: white;
+                border-radius: 15px 15px 0 0 !important;
+                padding: 1.5rem;
+            }
+    
+            .btn-primary {
+                background-color: var(--primary-color);
+                border: none;
+                padding: 10px 20px;
+                border-radius: 10px;
+            }
+    
+            .btn-primary:hover {
+                background-color: var(--secondary-color);
+                transform: translateY(-2px);
+            }
+    
+            .form-control {
+                border-radius: 10px;
+                padding: 12px;
+                border: 2px solid #eee;
+            }
+    
+            .form-control:focus {
+                border-color: var(--primary-color);
+                box-shadow: 0 0 0 0.2rem rgba(255,105,180,0.25);
+            }
+    
+            .pastel-card {
+                height: 100%;
+            }
+    
+            .pastel-image {
+                height: 200px;
+                object-fit: cover;
+                border-radius: 15px 15px 0 0;
+            }
+    
+            .floating-button {
+                position: fixed;
+                bottom: 30px;
+                right: 30px;
+                width: 60px;
+                height: 60px;
+                border-radius: 50%;
+                background: var(--secondary-color);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: white;
+                box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+                cursor: pointer;
+                transition: all 0.3s ease;
+            }
+    
+            .floating-button:hover {
+                transform: scale(1.1);
+            }
+    
+            .stats-card {
+                background: white;
+                border-radius: 15px;
+                padding: 20px;
+                margin-bottom: 20px;
+                text-align: center;
+            }
+    
+            .stats-number {
+                font-size: 2rem;
+                font-weight: 700;
+                color: var(--primary-color);
+            }
+    
+            .loading-spinner {
+                width: 3rem;
+                height: 3rem;
+            }
+    
+            /* Animaciones */
+            .fade-in {
+                animation: fadeIn 0.5s ease-in;
+            }
+    
+            @keyframes fadeIn {
+                from { opacity: 0; }
+                to { opacity: 1; }
+            }
+        </style>
+</head>
+<body>
+    <!-- Reemplazar el nav existente por: -->
+    <div id="header"></div>
+
+    <div class="container">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="mb-0"><i class="fas fa-cogs me-2"></i>Gestión de Productos</h3>
+            </div>
+            <div class="card-body">
+                <form id="pastelForm" class="mb-4">
+                    <div class="row">
+                        <!-- Campo de nombre del producto -->
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label class="form-label">Nombre</label>
+                                <input type="text" class="form-control" id="pastelNombre" required>
+                            </div>
+                        </div>
+                        <!-- Campo de categoría -->
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label class="form-label">Categoría</label>
+                                <select class="form-control" id="pastelCategoria"></select>
+                            </div>
+                        </div>
+                        <!-- Campo de precio -->
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label class="form-label">Precio</label>
+                                <input type="number" class="form-control" id="pastelPrecio" min="0" step="0.01" required>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <!-- Campo de descripción -->
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Descripción</label>
+                                <textarea class="form-control" id="pastelDescripcion" rows="3"></textarea>
+                            </div>
+                        </div>
+                        <!-- Campo de stock -->
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Stock</label>
+                                <input type="number" class="form-control" id="pastelStock" min="0" required>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Campo de imagen -->
+                    <div class="mb-3">
+                        <label class="form-label">Imagen (URL o nombre de archivo)</label>
+                        <input type="text" class="form-control" id="pastelImagen">
+                    </div>
+                    <!-- Botón de guardar -->
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-2"></i>Guardar Producto
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.0.19/dist/sweetalert2.min.js"></script>
+    <script src="script_productos.js"></script>
+    <script src="js/loadHeader.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            loadCategoriasSelect();
+            loadHeader();
+            document.getElementById('pastelForm').onsubmit = createPastel;
+        });
+    </script>
+</body>
+</html>
