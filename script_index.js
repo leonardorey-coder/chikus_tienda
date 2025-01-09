@@ -118,7 +118,7 @@ function showNotification(title, message, type = 'success') {
 // Función para actualizar el dashboard
 async function updateDashboard() {
     try {
-        const [pasteles, categorias] = await Promise.all([
+        const [pastelesResponse, categoriasResponse] = await Promise.all([
             fetch('api/pasteles.php').then(r => r.json()),
             fetch('api/categorias.php').then(r => r.json())
         ]);
