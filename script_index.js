@@ -123,6 +123,25 @@ async function updateDashboard() {
             fetch('api/categorias.php').then(r => r.json())
         ]);
 
+        // Verifica si las respuestas son exitosas
+        if (!pastelesResponse.ok) {
+            const errorText = await pastelesResponse.text();
+            throw new Error(`Error al obtener pasteles: ${pastelesResponse.status} ${pastelesResponse.statusText}\n${errorText}`);
+        }
+
+        if (!categoriasResponse.ok) {
+            const errorText = await categoriasResponse.text();
+            throw new Error(`Error al obtener categorias: ${categoriasResponse.status} ${categoriasResponse.statusText}\n${errorText}`);
+        }
+
+        // Intenta parsear las respuestas como JSON
+        const pasteles = await pastelesResponse.json();
+        const categorias = await categoriasResponse.json();
+
+        // Continúa con la actualización del dashboard
+        console.log('Pasteles:', pasteles);
+        console.log('Categorías:', categorias);
+        
         // Actualizar contadores principales
         document.getElementById('totalPasteles').textContent = pasteles.length;
         document.getElementById('totalCategorias').textContent = categorias.length;
