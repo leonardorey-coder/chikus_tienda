@@ -125,12 +125,12 @@ async function updateDashboard() {
 
         // Verifica si las respuestas son exitosas
         if (!pastelesResponse.ok) {
-            const errorText = await pastelesResponse.text();
+            const errorText = await pastelesResponse.text;
             throw new Error(`Error al obtener pasteles: ${pastelesResponse.status} ${pastelesResponse.statusText}\n${errorText}`);
         }
 
         if (!categoriasResponse.ok) {
-            const errorText = await categoriasResponse.text();
+            const errorText = await categoriasResponse.text;
             throw new Error(`Error al obtener categorias: ${categoriasResponse.status} ${categoriasResponse.statusText}\n${errorText}`);
         }
 
