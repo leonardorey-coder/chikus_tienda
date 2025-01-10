@@ -118,14 +118,10 @@ function showNotification(title, message, type = 'success') {
 // Función para actualizar el dashboard
 async function updateDashboard() {
     try {
-        const [pastelesResponse, categoriasResponse] = await Promise.all([
+        const [pasteles, categorias] = await Promise.all([
             fetch('api/pasteles.php').then(r => r.json()),
             fetch('api/categorias.php').then(r => r.json())
         ]);
-
-        // Intenta parsear las respuestas como JSON
-        const pasteles = await pastelesResponse.json();
-        const categorias = await categoriasResponse.json();
 
         // Continúa con la actualización del dashboard
         console.log('Pasteles:', pasteles);
@@ -398,10 +394,6 @@ document.addEventListener('DOMContentLoaded', () => {
     updateDashboard();
     updateRankingVentas();
 
-    
-    // Configurar los eventos de los formularios
-    document.getElementById('categoriaForm').onsubmit = createCategoria;
-    document.getElementById('pastelForm').onsubmit = createPastel;
     
     // Configurar tooltips de Bootstrap
     const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
