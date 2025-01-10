@@ -134,27 +134,28 @@ switch($method) {
         break;
 
     case 'DELETE':
-        if(isset($_POST['id_pastel'])) {
+        $data = json_decode(file_get_contents("php://input"));
+        if(isset($data->id_pastel)) {
             $sql = "DELETE FROM pasteles WHERE id_pastel = :id";
             $stmt = $db->prepare($sql);
             
-            $stmt->bindParam(':id', $_POST['id_pastel']);
+            $stmt->bindParam(':id', $data->id_pastel);
             
             if($stmt->execute()) {
                 echo json_encode(array(
                     "status" => "success",
-                    "message" => "Pastel eliminado exitosamente."
+                    "message" => "Producto eliminado exitosamente."
                 ));
             } else {
                 echo json_encode(array(
                     "status" => "error",
-                    "message" => "Error al eliminar el pastel."
+                    "message" => "Error al eliminar el producto."
                 ));
             }
         } else {
             echo json_encode(array(
                 "status" => "error",
-                "message" => "ID del pastel no proporcionado."
+                "message" => "ID del producto no proporcionado."
             ));
         }
         break;
