@@ -33,16 +33,18 @@ switch($method) {
                 $stmt->execute();
                 
             } else if ($fechaEspecifica) {
-                // Asegurarse de que la fecha está en formato correcto
-                $fecha = date('Y-m-d', strtotime($fechaEspecifica));
-                $sql = "SELECT v.*, p.nombre, p.descripcion, p.imagen 
-                        FROM ventas v 
-                        JOIN pasteles p ON v.id_pastel = p.id_pastel 
-                        WHERE CAST(v.fecha_venta AS DATE) = @fecha
-                        ORDER BY v.fecha_venta DESC";
-                $stmt = $db->prepare($sql);
-                $stmt->bindParam('@fecha', $fecha);
-                $stmt->execute();
+              // Asegurarse de que la fecha está en formato correcto
+$fecha = date('Y-m-d', strtotime($fechaEspecifica));
+
+$sql = "SELECT v.*, p.nombre, p.descripcion, p.imagen 
+        FROM ventas v 
+        JOIN pasteles p ON v.id_pastel = p.id_pastel 
+        WHERE CAST(v.fecha_venta AS DATE) = :fecha
+        ORDER BY v.fecha_venta DESC";
+
+$stmt = $db->prepare($sql);
+$stmt->bindParam(':fecha', $fecha);
+$stmt->execute();
                 
             } else if ($porDia) {
                 $sql = "SELECT v.*, p.nombre, p.descripcion, p.imagen 
