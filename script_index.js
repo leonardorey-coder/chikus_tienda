@@ -1,118 +1,14 @@
-// Funciones para manejar la visualización de secciones
-function showSection(sectionId) {
-    document.querySelectorAll('.section').forEach(section => {
-        section.style.display = 'none';
-    });
-    document.getElementById(sectionId).style.display = 'block';
-}
-
-// Cargar pasteles
-async function loadPasteles() {
-    try {
-        const response = await fetch('api/pasteles.php');
-        const pasteles = await response.json();
-        
-        const pastelesList = document.getElementById('pastelesList');
-        pastelesList.innerHTML = '';
-        
-        pasteles.forEach(pastel => {
-            const col = document.createElement('div');
-            col.className = 'col-md-4 mb-4';
-            col.innerHTML = `
-                <div class="card h-100 pastel-card">
-                    <img src="${pastel.imagen || 'https://via.placeholder.com/300x200?text=Sin+Imagen'}" 
-                         class="card-img-top pastel-image" 
-                         alt="${pastel.nombre}">
-                    <div class="card-body">
-                        <h5 class="card-title">${pastel.nombre}</h5>
-                        <p class="card-text">${pastel.descripcion || 'Sin descripción'}</p>
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <span class="badge bg-primary">$${parseFloat(pastel.precio).toFixed(2)}</span>
-                            <span class="badge bg-secondary">Stock: ${pastel.stock}</span>
-                        </div>
-                        <p class="card-text"><small class="text-muted">Categoría: ${pastel.categoria_nombre}</small></p>
-                    </div>
-                    <div class="card-footer bg-white border-0">
-                        <div class="btn-group w-100">
-                            <button onclick="editPastel(${pastel.id_pastel})" class="btn btn-primary">
-                                <i class="fas fa-edit"></i> Editar
-                            </button>
-                            <button onclick="deletePastel(${pastel.id_pastel})" class="btn btn-danger">
-                                <i class="fas fa-trash"></i> Eliminar
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            `;
-            pastelesList.appendChild(col);
-        });
-    } catch (error) {
-        showNotification('Error', 'No se pudieron cargar los pasteles', 'error');
-    }
-}
-
-// Funciones para manejar pasteles
-async function createPastel(event) {
-    event.preventDefault();
-    
-    const loadingButton = Swal.fire({
-        title: 'Guardando producto...',
-        allowOutsideClick: false,
-        didOpen: () => {
-            Swal.showLoading();
-        }
-    });
-    
-    const data = {
-        id_categoria: document.getElementById('pastelCategoria').value,
-        nombre: document.getElementById('pastelNombre').value,
-        descripcion: document.getElementById('pastelDescripcion').value,
-        precio: document.getElementById('pastelPrecio').value,
-        stock: document.getElementById('pastelStock').value,
-        imagen: document.getElementById('pastelImagen').value
-    };
-
-    try {
-        const response = await fetch('api/pasteles.php', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(data)
-        });
-
-        const result = await response.json();
-        loadingButton.close();
-        showNotification('¡Éxito!', result.message);
-        loadPasteles();
-        updateDashboard();
-        document.getElementById('pastelForm').reset();
-    } catch (error) {
-        loadingButton.close();
-        showNotification('Error', 'No se pudo crear el pastel', 'error');
-    }
-}
-
-async function editPastel(id) {
-    // ...existing code...
-}
-
-async function updatePastel(event, id) {
-    // ...existing code...
-}
-
-async function deletePastel(id) {
-    // ...existing code...
-}
-
-// Función para cargar categorías en el select
-async function loadCategoriasSelect() {
-    // ...existing code...
-}
-
 // Función para mostrar notificaciones
 function showNotification(title, message, type = 'success') {
-    // ...existing code...
+    Swal.fire({
+        title: title,
+        text: message,
+        icon: type,
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 3000
+    });
 }
 
 // Función para actualizar el dashboard
@@ -122,10 +18,6 @@ async function updateDashboard() {
             fetch('api/pasteles.php').then(r => r.json()),
             fetch('api/categorias.php').then(r => r.json())
         ]);
-
-        // Continúa con la actualización del dashboard
-        console.log('Pasteles:', pasteles);
-        console.log('Categorías:', categorias);
         
         // Actualizar contadores principales
         document.getElementById('totalPasteles').textContent = pasteles.length;
@@ -235,16 +127,6 @@ async function updateDashboard() {
     }
 }
 
-// Función para mostrar/ocultar secciones con animación
-function showSection(sectionId) {
-    // ...existing code...
-}
-
-// Función para validar formularios
-function validateForm(formId) {
-    // ...existing code...
-}
-
 // Función para previsualizar imágenes
 function previewImage(input) {
     const preview = document.getElementById('imagePreview');
@@ -264,48 +146,39 @@ function previewImage(input) {
     }
 }
 
-// Función para actualizar el ranking de ventas
+// Función para actualizar el ranking de ventas (agrupado)
 async function updateRankingVentas() {
-    const ventas = JSON.parse(localStorage.getItem('productosVendidos') || '{}');
-    const idsVendidos = Object.keys(ventas);
-    
-    if(idsVendidos.length === 0) {
-        document.getElementById('rankingVentas').innerHTML = '<p class="text-muted mb-0">No hay datos de ventas.</p>';
-        return;
-    }
-
     try {
-        // Obtener detalles de todos los productos vendidos
-        const response = await fetch('api/pasteles.php');
-        const productos = await response.json();
-        
-        // Filtrar solo los productos que han sido vendidos
-        const productosVendidos = productos.filter(pastel => idsVendidos.includes(pastel.id_pastel.toString()));
-        
-        // Mapear ventas con detalles de productos
-        const ventasDetalladas = productosVendidos.map(pastel => ({
-            id: pastel.id_pastel,
-            nombre: pastel.nombre,
-            imagen: pastel.imagen || 'https://via.placeholder.com/100x100?text=Sin+Imagen',
-            ventas: ventas[pastel.id_pastel]
-        }));
-        
-        // Ordenar de mayor a menor ventas
-        ventasDetalladas.sort((a, b) => b.ventas - a.ventas);
-        
-        const top3 = ventasDetalladas.slice(0, 3);
-        const least3 = ventasDetalladas.slice(-3).reverse();
-        
+        const response = await fetch('api/ventas.php?agrupado=true');
+        const ventas = await response.json();
+
+        if (ventas.length === 0) {
+            document.getElementById('rankingVentas').innerHTML = '<p class="text-muted text-center mb-0">No hay datos de ventas.</p>';
+            return;
+        }
+
+        // Ordenar por cantidad total de ventas
+        const ventasOrdenadas = [...ventas].sort((a, b) => b.cantidad_total - a.cantidad_total);
+        const top3 = ventasOrdenadas.slice(0, 3);
+        const least3 = ventasOrdenadas.slice(-3).reverse();
+
         let html = `
             <div class="row mb-3">
                 <div class="col-md-6">
                     <h6>Más Vendidos</h6>
                     ${top3.map(producto => `
                         <div class="d-flex align-items-center mb-2">
-                            <img src="${producto.imagen}" alt="${producto.nombre}" width="50" height="50" class="me-3 rounded">
+                            <img src="${producto.imagen || 'https://via.placeholder.com/100x100?text=Sin+Imagen'}" 
+                                 alt="${producto.nombre}" 
+                                 width="50" height="50" 
+                                 class="me-3 rounded">
                             <div>
                                 <strong>${producto.nombre}</strong>
-                                <div>Ventas: ${producto.ventas}</div>
+                                <div class="text-muted small">
+                                    Total vendidos: ${producto.cantidad_total}
+                                    <br>
+                                    <small>(${producto.total_ventas} ventas)</small>
+                                </div>
                             </div>
                         </div>
                     `).join('')}
@@ -314,26 +187,151 @@ async function updateRankingVentas() {
                     <h6>Menos Vendidos</h6>
                     ${least3.map(producto => `
                         <div class="d-flex align-items-center mb-2">
-                            <img src="${producto.imagen}" alt="${producto.nombre}" width="50" height="50" class="me-3 rounded">
+                            <img src="${producto.imagen || 'https://via.placeholder.com/100x100?text=Sin+Imagen'}" 
+                                 alt="${producto.nombre}" 
+                                 width="50" height="50" 
+                                 class="me-3 rounded">
                             <div>
                                 <strong>${producto.nombre}</strong>
-                                <div>Ventas: ${producto.ventas}</div>
+                                <div class="text-muted small">
+                                    Total vendidos: ${producto.cantidad_total}
+                                    <br>
+                                    <small>(${producto.total_ventas} ventas)</small>
+                                </div>
                             </div>
                         </div>
                     `).join('')}
                 </div>
             </div>
         `;
-        
+
         document.getElementById('rankingVentas').innerHTML = html;
-        
+
     } catch (error) {
         console.error('Error al actualizar el ranking de ventas:', error);
         document.getElementById('rankingVentas').innerHTML = '<p class="text-danger mb-0">Error al cargar el ranking de ventas.</p>';
     }
 }
 
-// ...existing code...
+// Función para actualizar el historial de ventas (no agrupado)
+async function actualizarHistorialVentas() {
+    const historialVentasBody = document.getElementById('historialVentasBody');
+    historialVentasBody.innerHTML = '';
+
+    try {
+        const response = await fetch('api/ventas.php?dia=true');
+        const ventas = await response.json();
+
+        if (ventas.length === 0) {
+            historialVentasBody.innerHTML = `
+                <tr>
+                    <td colspan="5" class="text-center py-4">
+                        <i class="fas fa-receipt fa-2x mb-3 d-block text-muted"></i>
+                        <span class="text-muted">No hay ventas hoy</span>
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+
+        // Agrupar ventas por hora
+        const ventasPorHora = ventas.reduce((grupos, venta) => {
+            const hora = new Date(venta.fecha_venta).getHours();
+            if (!grupos[hora]) {
+                grupos[hora] = [];
+            }
+            grupos[hora].push(venta);
+            return grupos;
+        }, {});
+
+        // Convertir a array y ordenar las horas de mayor a menor
+        const horasOrdenadas = Object.entries(ventasPorHora)
+            .sort(([horaA], [horaB]) => parseInt(horaB) - parseInt(horaA));
+
+        const html = horasOrdenadas.map(([hora, ventasHora]) => {
+            // Formatear hora con padding de ceros
+            const horaFormateada = hora.toString().padStart(2, '0') + ':00';
+            
+            return `
+                <tr class="table-light">
+                    <td colspan="5" class="fw-bold text-primary">
+                        ${horaFormateada}
+                    </td>
+                </tr>
+                ${ventasHora.map(venta => `
+                    <tr>
+                        <td class="text-nowrap text-muted">${formatDate(venta.fecha_venta)}</td>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <img src="${venta.imagen || 'https://via.placeholder.com/40x40?text=Sin+Imagen'}" 
+                                     alt="${venta.nombre}"
+                                     class="rounded me-2"
+                                     style="width: 40px; height: 40px; object-fit: cover;">
+                                <div class="fw-medium">${venta.nombre}</div>
+                            </div>
+                        </td>
+                        <td class=" d-md-table-cell text-muted">
+                            <small>${venta.descripcion || 'Sin descripción'}</small>
+                        </td>
+                        <td class="text-center">
+                            <span class="badge bg-secondary">${venta.cantidad}</span>
+                        </td>
+                        <td class="text-end">
+                            <span class="badge bg-success">$${(venta.precio_unitario * venta.cantidad).toFixed(2)}</span>
+                        </td>
+                    </tr>
+                `).join('')}
+            `;
+        }).join('');
+        
+        historialVentasBody.innerHTML = html;
+
+        // Calcular y mostrar el total del día
+        const totalDia = ventas.reduce((total, venta) => 
+            total + (venta.precio_unitario * venta.cantidad), 0
+        );
+
+        historialVentasBody.innerHTML += `
+            <tr>
+                <td colspan="4" class="text-end">Total:</td>
+                <td class="text-end">
+                    <span class="badge bg-primary fs-6">$${totalDia.toFixed(2)}</span>
+                </td>
+            </tr>
+        `;
+        
+    } catch (error) {
+        console.error('Error:', error);
+        historialVentasBody.innerHTML = `
+            <tr>
+                <td colspan="5" class="text-center py-4">
+                    <i class="fas fa-exclamation-circle fa-2x mb-3 d-block text-danger"></i>
+                    <span class="text-danger">Error al cargar el historial</span>
+                </td>
+            </tr>
+        `;
+    }
+}
+
+// Agregar función para actualización automática a medianoche
+function programarActualizacionMedianoche() {
+    const ahora = new Date();
+    const medianoche = new Date(
+        ahora.getFullYear(),
+        ahora.getMonth(),
+        ahora.getDate() + 1, // siguiente día
+        0, 0, 0 // 00:00:00
+    );
+    
+    const tiempoHastaMedianoche = medianoche - ahora;
+
+    // Programar la actualización para medianoche
+    setTimeout(() => {
+        actualizarHistorialVentas();
+        // Reprogramar para la siguiente medianoche
+        programarActualizacionMedianoche();
+    }, tiempoHastaMedianoche);
+}
 
 async function loadDashboardData() {
     try {
@@ -351,7 +349,6 @@ async function loadDashboardData() {
             document.getElementById('totalStock').innerText = '0';
         }
 
-        // ...existing code...
     } catch (error) {
         console.error('Error al cargar los datos del dashboard:', error);
     }
@@ -385,15 +382,183 @@ function calcularValorInventario(productos) {
     }, 0).toFixed(2);
 }
 
+const formatDate = (isoString) => {
+    const date = new Date(isoString);
+    const options = {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false,
+    };
+    return date.toLocaleString('es-ES', options).replace(',', '');
+};
+
+async function toggleHistorialCompleto() {
+    const contenedor = document.getElementById('historialCompletoDias');
+    const accordion = document.getElementById('accordionHistorial');
+    
+    if (contenedor.style.display === 'none') {
+        contenedor.style.display = 'block';
+        try {
+            const response = await fetch('api/ventas.php?historialDias=true');
+            const dias = await response.json();
+            
+            accordion.innerHTML = dias.map((dia, index) => `
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" 
+                                data-bs-toggle="collapse" 
+                                data-bs-target="#collapse${index}">
+                            <div class="d-flex justify-content-between w-100 me-3">
+                                <span>${formatearFecha(dia.fecha)}</span>
+                                <span class="badge bg-success ms-2">$${parseFloat(dia.total_dia).toFixed(2)}</span>
+                                <span class="badge bg-primary ms-2">${dia.total_ventas} ventas</span>
+                            </div>
+                        </button>
+                    </h2>
+                    <div id="collapse${index}" class="accordion-collapse collapse" 
+                         data-bs-parent="#accordionHistorial">
+                        <div class="accordion-body">
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Hora</th>
+                                            <th>Producto</th>
+                                            <th class="d-md-table-cell">Descripción</th>
+                                            <th class="text-center">Cant.</th>
+                                            <th class="text-end">Total</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="historialDia${index}">
+                                        <tr>
+                                            <td colspan="5" class="text-center">
+                                                <div class="spinner-border text-primary" role="status">
+                                                    <span class="visually-hidden">Cargando...</span>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+
+            // Agregar evento para cargar datos cuando se abra cada acordeón
+            document.querySelectorAll('.accordion-button').forEach((btn, index) => {
+                btn.addEventListener('click', async () => {
+                    if (!btn.classList.contains('loaded')) {
+                        const fecha = dias[index].fecha;
+                        await cargarVentasPorDia(fecha, `historialDia${index}`);
+                        btn.classList.add('loaded');
+                    }
+                });
+            });
+
+        } catch (error) {
+            console.error('Error:', error);
+            accordion.innerHTML = '<div class="alert alert-danger">Error al cargar el historial</div>';
+        }
+    } else {
+        contenedor.style.display = 'none';
+    }
+}
+
+async function cargarVentasPorDia(fecha, targetId) {
+    try {
+        const response = await fetch(`api/ventas.php?fecha=${fecha}`);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        
+        if (data.status === 'error') {
+            throw new Error(data.message);
+        }
+
+        const tbody = document.getElementById(targetId);
+        
+        if (!Array.isArray(data) || data.length === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="5" class="text-center text-muted">
+                        No hay ventas registradas para este día
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+
+        tbody.innerHTML = data.map(venta => `
+            <tr>
+                <td class="text-nowrap">${formatearHora(venta.fecha_venta)}</td>
+                <td>
+                    <div class="d-flex align-items-center">
+                        <img src="${venta.imagen || 'https://via.placeholder.com/40x40?text=Sin+Imagen'}" 
+                             alt="${venta.nombre}"
+                             class="rounded me-2"
+                             style="width: 40px; height: 40px; object-fit: cover;">
+                        <div class="fw-medium">${venta.nombre}</div>
+                    </div>
+                </td>
+                <td class="d-md-table-cell">
+                    <small class="text-muted">${venta.descripcion || 'Sin descripción'}</small>
+                </td>
+                <td class="text-center">
+                    <span class="badge bg-secondary">${venta.cantidad}</span>
+                </td>
+                <td class="text-end">
+                    <span class="badge bg-success">$${(venta.cantidad * venta.precio_unitario).toFixed(2)}</span>
+                </td>
+            </tr>
+        `).join('');
+
+    } catch (error) {
+        console.error('Error:', error);
+        document.getElementById(targetId).innerHTML = `
+            <tr>
+                <td colspan="5" class="text-center text-danger">
+                    <i class="fas fa-exclamation-circle me-2"></i>
+                    Error al cargar las ventas: ${error.message}
+                </td>
+            </tr>
+        `;
+    }
+}
+
+function formatearFecha(fecha) {
+    // Asegurarse de que sea tratada como fecha local
+    const [year, month, day] = fecha.split('-').map(Number);
+    const fechaLocal = new Date(year, month - 1, day); // Mes en JavaScript es 0-indexado
+
+    return fechaLocal.toLocaleDateString('es-ES', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+    });
+}
+
+function formatearHora(fecha) {
+    return new Date(fecha).toLocaleTimeString('es-ES', {
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+}
+
 // Cargar datos iniciales para index
 document.addEventListener('DOMContentLoaded', () => {
+    loadHeader();
     loadDashboardData();
-    updateRankingVentas();
     // Mostrar dashboard por defecto
 
-    updateDashboard();
     updateRankingVentas();
-
+    actualizarHistorialVentas();
     
     // Configurar tooltips de Bootstrap
     const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
@@ -402,13 +567,12 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     if(document.getElementById('dashboard')) {
-        showSection('dashboard');
         updateDashboard();
     }
-    if(document.getElementById('pastelesList')) {
-        loadPasteles();
-    }
-    if(document.getElementById('pastelForm')) {
-        loadCategoriasSelect();
-    }
+
+    // Agregar programación de actualización a medianoche
+    programarActualizacionMedianoche();
+    
+    // Actualizar cada 5 minutos por si acaso
+    setInterval(actualizarHistorialVentas, 300000);
 });

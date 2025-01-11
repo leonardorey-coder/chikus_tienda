@@ -144,18 +144,18 @@ switch($method) {
             if($stmt->execute()) {
                 echo json_encode(array(
                     "status" => "success",
-                    "message" => "Producto eliminado exitosamente."
+                    "message" => "Pastel eliminado exitosamente."
                 ));
             } else {
                 echo json_encode(array(
                     "status" => "error",
-                    "message" => "Error al eliminar el producto."
+                    "message" => "Error al eliminar el pastel."
                 ));
             }
         } else {
             echo json_encode(array(
                 "status" => "error",
-                "message" => "ID del producto no proporcionado."
+                "message" => "ID del pastel no proporcionado."
             ));
         }
         break;

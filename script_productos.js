@@ -252,8 +252,8 @@ async function loadPasteles() {
                                                 <button onclick="deletePastel(${pastel.id_pastel})" class="btn btn-sm btn-danger">
                                                     <i class="fas fa-trash"></i>
                                                 </button>
-                                                <button onclick="venderUno(${pastel.id_pastel})" class="btn btn-sm btn-warning">
-                                                    <i class="fas fa-handshake"></i> Vender Uno
+                                                <button onclick="abrirVenta(${pastel.id_pastel}, '${pastel.nombre}')" class="btn btn-sm btn-warning">
+                                                    <i class="fas fa-handshake"></i> Vender
                                                 </button>
                                             </div>
                                         </div>
@@ -322,8 +322,8 @@ async function loadPasteles() {
                                 <button onclick="deletePastel(${pastel.id_pastel})" class="btn btn-danger btn-sm">
                                     <i class="fas fa-trash"></i> Eliminar
                                 </button>
-                                <button onclick="venderUno(${pastel.id_pastel})" class="btn btn-warning btn-sm">
-                                    <i class="fas fa-handshake"></i> Vender Uno
+                                <button onclick="abrirVenta(${pastel.id_pastel}, '${pastel.nombre}')" class="btn btn-warning btn-sm">
+                                    <i class="fas fa-handshake"></i> Vender
                                 </button>
                             </div>
                         </div>
@@ -405,22 +405,76 @@ async function updateStock(id, cantidad, customAmount = false) {
     }
 }
 
-function venderUno(id) {
-    // Resta 1 del stock
-    updateStock(id, -1);
-
-    // Registrar la venta (usando localStorage)
-    const ventas = JSON.parse(localStorage.getItem('productosVendidos') || '{}');
-    ventas[id] = (ventas[id] || 0) + 1;
-    localStorage.setItem('productosVendidos', JSON.stringify(ventas));
-
-    // Actualizar el ranking de ventas si estás en el dashboard
-    if(window.location.pathname.endsWith('index.html')) {
-        // Asumiendo que script_productos.js también se carga en index.html
-        if(typeof updateRankingVentas === 'function') {
-            updateRankingVentas();
+async function abrirVenta(id, nombre) {
+    const { value: cantidad } = await Swal.fire({
+        title: `Vender ${nombre}`,
+        input: 'number',
+        inputLabel: 'Cantidad',
+        inputValue: 1,
+        inputAttributes: {
+            min: 1,
+            step: 1
+        },
+        showCancelButton: true,
+        cancelButtonText: 'Cancelar',
+        confirmButtonText: 'Vender',
+        confirmButtonColor: '#ffc107',
+        inputValidator: (value) => {
+            if (!value || value < 1) {
+                return 'La cantidad debe ser al menos 1';
+            }
         }
+    });
+
+    if (cantidad) {
+        venderProducto(id, parseInt(cantidad));
     }
 }
 
-// ...existing code...
+async function venderProducto(id, cantidad) {
+    try {
+        // Registrar la venta en la base de datos
+        const ventaResponse = await fetch('api/ventas.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                id_pastel: id,
+                cantidad: cantidad
+            })
+        });
+
+        const ventaResult = await ventaResponse.json();
+        
+        if (ventaResult.status === 'success') {
+            // Actualizar el stock
+            await updateStock(id, -cantidad);
+            
+            // Registrar en localStorage para el ranking temporal
+            const ventas = JSON.parse(localStorage.getItem('productosVendidos') || '[]');
+            // Agregar una entrada por cada unidad vendida
+            for (let i = 0; i < cantidad; i++) {
+                ventas.push({ id: id, fecha: new Date().toISOString() });
+            }
+            localStorage.setItem('productosVendidos', JSON.stringify(ventas));
+
+            // Actualizar la interfaz si estamos en el dashboard
+            if (window.location.pathname.endsWith('index.html')) {
+                if (typeof updateRankingVentas === 'function') {
+                    updateRankingVentas();
+                }
+                if (typeof actualizarHistorialVentas === 'function') {
+                    actualizarHistorialVentas();
+                }
+            }
+            
+            showNotification('¡Éxito!', `Venta de ${cantidad} unidad(es) registrada correctamente`, 'success');
+        } else {
+            throw new Error(ventaResult.message);
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showNotification('Error', 'No se pudo registrar la venta', 'error');
+    }
+}

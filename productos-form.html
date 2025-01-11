@@ -156,7 +156,7 @@
                 <h3 class="mb-0"><i class="fas fa-cogs me-2"></i>Gestión de Productos</h3>
             </div>
             <div class="card-body">
-                <form id="pastelForm" class="mb-4">
+                <form id="pastelForm" class="mb-4" enctype="multipart/form-data">
                     <div class="row">
                         <!-- Campo de nombre del producto -->
                         <div class="col-md-4">
@@ -197,9 +197,13 @@
                         </div>
                     </div>
                     <!-- Campo de imagen -->
-                    <div class="mb-3">
+                    <div hidden class="mb-3">
                         <label class="form-label">Imagen (URL o nombre de archivo)</label>
                         <input type="text" class="form-control" id="pastelImagen">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Subir Imagen</label>
+                        <input type="file" class="form-control" id="pastelArchivo">
                     </div>
                     <!-- Botón de guardar -->
                     <button type="submit" class="btn btn-primary">
@@ -219,6 +223,12 @@
             loadCategoriasSelect();
             loadHeader();
             document.getElementById('pastelForm').onsubmit = createPastel;
+            const archivoInput = document.getElementById('pastelArchivo');
+            archivoInput.addEventListener('change', e => {
+                if (e.target.files[0]) {
+                    document.getElementById('pastelImagen').value = e.target.files[0].name;
+                }
+            });
         });
     </script>
 </body>
