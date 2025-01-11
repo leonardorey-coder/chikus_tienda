@@ -299,7 +299,7 @@ async function updatePastel(event, id) {
 }
 
 async function deletePastel(id) {
-    if (confirm('¿Está seguro de eliminar este producto?')) {
+    if (confirm('¿Está seguro de eliminar este producto?' + id)) {
         try {
             const response = await fetch('api/pasteles.php', {
                 method: 'DELETE',
