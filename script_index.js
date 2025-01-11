@@ -403,7 +403,9 @@ async function toggleHistorialCompleto() {
     if (contenedor.style.display === 'none') {
         contenedor.style.display = 'block';
         try {
-            const response = await fetch('api/ventas.php?historialDias=true');
+            const baseUrl = window.location.origin;
+            const response = await fetch(`${baseUrl}/api/ventas?historialDias=true`);
+            if (!response.ok) throw new Error('Error al cargar el historial');
             const dias = await response.json();
             
             accordion.innerHTML = dias.map((dia, index) => `
@@ -471,10 +473,14 @@ async function toggleHistorialCompleto() {
 
 async function cargarVentasPorDia(fecha, targetId) {
     try {
-        const response = await fetch(`api/ventas.php?fecha=${fecha}`);
+        // Ajustar la ruta para Azure
+        const baseUrl = window.location.origin; // Obtiene la URL base del sitio
+        const response = await fetch(`${baseUrl}/api/ventas?fecha=${fecha}`); // Eliminar .php
+        
         if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+            throw new Error(`Error al cargar las ventas: ${response.status} - ${response.statusText}`);
         }
+        
         const data = await response.json();
         
         if (data.status === 'error') {
@@ -519,12 +525,12 @@ async function cargarVentasPorDia(fecha, targetId) {
         `).join('');
 
     } catch (error) {
-        console.error('Error:', error);
+        console.error('Error completo:', error);
         document.getElementById(targetId).innerHTML = `
             <tr>
                 <td colspan="5" class="text-center text-danger">
                     <i class="fas fa-exclamation-circle me-2"></i>
-                    Error al cargar las ventas: ${error.message}
+                    Error al cargar las ventas. Por favor, intente nuevamente.
                 </td>
             </tr>
         `;
