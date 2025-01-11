@@ -313,7 +313,7 @@ async function deletePastel(id) {
             alert(result.message);
             loadPasteles();
         } catch (error) {
-            console.error('mateo:', error);
+            console.error('Error:', error);
         }
     }
 }
