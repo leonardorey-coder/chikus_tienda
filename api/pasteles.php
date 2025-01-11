@@ -133,33 +133,31 @@ switch($method) {
         }
         break;
 
-case 'DELETE':
-    $data = json_decode(file_get_contents("php://input"));
-    if (isset($data->id_pastel)) {
-        // Cambia el marcador de parámetro a @id para SQL Server
-        $sql = "DELETE FROM pasteles WHERE id_pastel = @id";
-        $stmt = $db->prepare($sql);
-
-        // Vincula el parámetro con el formato de SQL Server
-        $stmt->bindParam('@id', $data->id_pastel, PDO::PARAM_INT);
-
-        if ($stmt->execute()) {
-            echo json_encode(array(
-                "status" => "success",
-                "message" => "Pastel eliminado exitosamente."
-            ));
+    case 'DELETE':
+        $data = json_decode(file_get_contents("php://input"));
+        if(isset($data->id_pastel)) {
+            $sql = "DELETE FROM pasteles WHERE id_pastel = :id";
+            $stmt = $db->prepare($sql);
+            
+            $stmt->bindParam(':id', intval($data->id_pastel));
+            
+            if($stmt->execute()) {
+                echo json_encode(array(
+                    "status" => "success",
+                    "message" => "Pastel eliminado exitosamente."
+                ));
+            } else {
+                echo json_encode(array(
+                    "status" => "error",
+                    "message" => "Error al eliminar el pastel."
+                ));
+            }
         } else {
             echo json_encode(array(
                 "status" => "error",
-                "message" => "Error al eliminar el pastel."
+                "message" => "ID del pastel no proporcionado."
             ));
         }
-    } else {
-        echo json_encode(array(
-            "status" => "error",
-            "message" => "ID del pastel no proporcionado."
-        ));
-    }
-    break;
+        break;
 }
 ?>
