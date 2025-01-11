@@ -471,7 +471,7 @@ async function toggleHistorialCompleto() {
 
 async function cargarVentasPorDia(fecha, targetId) {
     try {
-        const response = await fetch(`api/ventas.php?fecha=${fecha}`);
+        const response = await fetch(`api/ventas.php?fecha=${encodeURIComponent(fecha)}`);
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
