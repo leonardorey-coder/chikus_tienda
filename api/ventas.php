@@ -23,11 +23,11 @@ switch($method) {
             if ($historialDias) {
                 // Consulta para obtener días únicos con ventas
                 $sql = "SELECT 
-                        DATE(fecha_venta) as fecha,
+                        CAST(fecha_venta AS DATE) as fecha,
                         COUNT(DISTINCT id_venta) as total_ventas,
                         SUM(cantidad * precio_unitario) as total_dia
                     FROM ventas 
-                    GROUP BY DATE(fecha_venta)
+                    GROUP BY CAST(fecha_venta AS DATE)
                     ORDER BY fecha DESC";
                 $stmt = $db->prepare($sql);
                 $stmt->execute();
@@ -38,43 +38,45 @@ switch($method) {
                 $sql = "SELECT v.*, p.nombre, p.descripcion, p.imagen 
                         FROM ventas v 
                         JOIN pasteles p ON v.id_pastel = p.id_pastel 
-                        WHERE DATE(v.fecha_venta) = :fecha
+                        WHERE CAST(v.fecha_venta AS DATE) = @fecha
                         ORDER BY v.fecha_venta DESC";
                 $stmt = $db->prepare($sql);
-                $stmt->bindParam(':fecha', $fecha);
+                $stmt->bindParam('@fecha', $fecha);
                 $stmt->execute();
                 
             } else if ($porDia) {
-                // Usar NOW() para obtener la fecha actual del servidor
                 $sql = "SELECT v.*, p.nombre, p.descripcion, p.imagen 
                         FROM ventas v 
                         JOIN pasteles p ON v.id_pastel = p.id_pastel 
-                        WHERE DATE(v.fecha_venta) = CURRENT_DATE()
+                        WHERE CAST(v.fecha_venta AS DATE) = CAST(GETDATE() AS DATE)
                         ORDER BY v.fecha_venta DESC";
                 $stmt = $db->prepare($sql);
                 $stmt->execute();
                 
             } else if ($agrupado) {
-                // Consulta para ventas agrupadas (mantener consulta existente)
                 $sql = "SELECT 
-                            v.id_pastel,
-                            p.nombre,
-                            p.descripcion,
-                            p.imagen,
-                            MIN(v.fecha_venta) as primera_venta,
-                            MAX(v.fecha_venta) as ultima_venta,
-                            SUM(v.cantidad) as cantidad_total,
-                            v.precio_unitario,
-                            COUNT(*) as total_ventas
-                        FROM ventas v 
-                        JOIN pasteles p ON v.id_pastel = p.id_pastel 
-                        GROUP BY v.id_pastel, p.nombre, p.descripcion, v.precio_unitario
-                        ORDER BY cantidad_total DESC";
+    v.id_pastel,
+    p.nombre,
+    p.descripcion,
+    p.imagen,
+    MIN(v.fecha_venta) as primera_venta,
+    MAX(v.fecha_venta) as ultima_venta,
+    SUM(v.cantidad) as cantidad_total,
+    v.precio_unitario,
+    COUNT(*) as total_ventas
+FROM ventas v 
+JOIN pasteles p ON v.id_pastel = p.id_pastel 
+GROUP BY 
+    v.id_pastel, 
+    p.nombre, 
+    p.descripcion, 
+    p.imagen,
+    v.precio_unitario
+ORDER BY cantidad_total DESC";
                 $stmt = $db->prepare($sql);
                 $stmt->execute();
                 
             } else {
-                // Consulta para todas las ventas sin agrupar
                 $sql = "SELECT v.*, p.nombre, p.descripcion, p.imagen 
                         FROM ventas v 
                         JOIN pasteles p ON v.id_pastel = p.id_pastel 
@@ -85,7 +87,6 @@ switch($method) {
 
             $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
             
-            // Verificar si hay resultados
             if ($result === false) {
                 throw new Exception("Error al ejecutar la consulta");
             }
@@ -105,23 +106,21 @@ switch($method) {
         $data = json_decode(file_get_contents("php://input"));
         
         if(isset($data->id_pastel)) {
-            // Primero obtener el precio actual del producto
-            $sql = "SELECT precio FROM pasteles WHERE id_pastel = :id_pastel";
+            $sql = "SELECT precio FROM pasteles WHERE id_pastel = @id_pastel";
             $stmt = $db->prepare($sql);
-            $stmt->bindParam(':id_pastel', $data->id_pastel);
+            $stmt->bindParam('@id_pastel', $data->id_pastel);
             $stmt->execute();
             $producto = $stmt->fetch(PDO::FETCH_ASSOC);
 
             if($producto) {
-                // Registrar la venta
                 $sql = "INSERT INTO ventas (id_pastel, cantidad, precio_unitario) 
-                        VALUES (:id_pastel, :cantidad, :precio_unitario)";
+                        VALUES (@id_pastel, @cantidad, @precio_unitario)";
                 $stmt = $db->prepare($sql);
                 
                 $cantidad = $data->cantidad ?? 1;
-                $stmt->bindParam(':id_pastel', $data->id_pastel);
-                $stmt->bindParam(':cantidad', $cantidad);
-                $stmt->bindParam(':precio_unitario', $producto['precio']);
+                $stmt->bindParam('@id_pastel', $data->id_pastel);
+                $stmt->bindParam('@cantidad', $cantidad);
+                $stmt->bindParam('@precio_unitario', $producto['precio']);
                 
                 if($stmt->execute()) {
                     echo json_encode([
@@ -130,7 +129,7 @@ switch($method) {
                     ]);
                 } else {
                     echo json_encode([
-                        "status" => "error",
+                        "status" => "error", 
                         "message" => "Error al registrar la venta"
                     ]);
                 }
@@ -142,7 +141,7 @@ switch($method) {
             }
         } else {
             echo json_encode([
-                "status" => "error",
+                "status" => "error", 
                 "message" => "Datos incompletos"
             ]);
         }
