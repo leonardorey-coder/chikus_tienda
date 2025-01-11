@@ -55,19 +55,24 @@ switch($method) {
                 
             } else if ($agrupado) {
                 $sql = "SELECT 
-                            v.id_pastel,
-                            p.nombre,
-                            p.descripcion,
-                            p.imagen,
-                            MIN(v.fecha_venta) as primera_venta,
-                            MAX(v.fecha_venta) as ultima_venta,
-                            SUM(v.cantidad) as cantidad_total,
-                            v.precio_unitario,
-                            COUNT(*) as total_ventas
-                        FROM ventas v 
-                        JOIN pasteles p ON v.id_pastel = p.id_pastel 
-                        GROUP BY v.id_pastel, p.nombre, p.descripcion, v.precio_unitario
-                        ORDER BY cantidad_total DESC";
+    v.id_pastel,
+    p.nombre,
+    p.descripcion,
+    p.imagen,
+    MIN(v.fecha_venta) as primera_venta,
+    MAX(v.fecha_venta) as ultima_venta,
+    SUM(v.cantidad) as cantidad_total,
+    v.precio_unitario,
+    COUNT(*) as total_ventas
+FROM ventas v 
+JOIN pasteles p ON v.id_pastel = p.id_pastel 
+GROUP BY 
+    v.id_pastel, 
+    p.nombre, 
+    p.descripcion, 
+    p.imagen,
+    v.precio_unitario
+ORDER BY cantidad_total DESC";
                 $stmt = $db->prepare($sql);
                 $stmt->execute();
                 
