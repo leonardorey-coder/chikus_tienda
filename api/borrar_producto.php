@@ -10,16 +10,18 @@ include_once '../config/database.php';
 $database = new Database();
 $db = $database->getConnection();
 
-if(isset($_GET['id'])) {
+if (isset($_GET['id'])) {
     try {
-        // Primero verificamos si el pastel existe
-        $check_sql = "SELECT id_pastel FROM pasteles WHERE id_pastel = :id";
-        $check_stmt = $db->prepare($check_sql);
+        // Convertir ID a entero
         $id = intval($_GET['id']);
-        $check_stmt->bindParam(':id', $id);
+
+        // Verificar si el pastel existe
+        $check_sql = "SELECT id_pastel FROM pasteles WHERE id_pastel = @id";
+        $check_stmt = $db->prepare($check_sql);
+        $check_stmt->bindParam('@id', $id, PDO::PARAM_INT);
         $check_stmt->execute();
 
-        if($check_stmt->rowCount() === 0) {
+        if ($check_stmt->rowCount() === 0) {
             http_response_code(404);
             echo json_encode([
                 "status" => "error",
@@ -31,11 +33,12 @@ if(isset($_GET['id'])) {
         // Iniciar transacción
         $db->beginTransaction();
 
-        $sql = "DELETE FROM pasteles WHERE id_pastel = :id";
+        // Eliminar pastel
+        $sql = "DELETE FROM pasteles WHERE id_pastel = @id";
         $stmt = $db->prepare($sql);
-        $stmt->bindParam(':id', $id);
-        
-        if($stmt->execute()) {
+        $stmt->bindParam('@id', $id, PDO::PARAM_INT);
+
+        if ($stmt->execute()) {
             $db->commit();
             http_response_code(200);
             echo json_encode([
@@ -45,14 +48,14 @@ if(isset($_GET['id'])) {
         } else {
             throw new Exception("Error al ejecutar la consulta");
         }
-    } catch(PDOException $e) {
+    } catch (PDOException $e) {
         $db->rollBack();
         http_response_code(500);
         echo json_encode([
             "status" => "error",
             "message" => "Error en la base de datos: " . $e->getMessage()
         ]);
-    } catch(Exception $e) {
+    } catch (Exception $e) {
         $db->rollBack();
         http_response_code(500);
         echo json_encode([
