@@ -10,22 +10,20 @@ include_once '../config/database.php';
 $database = new Database();
 $db = $database->getConnection();
 
-if (isset($_GET['id'])) {
+if(isset($_GET['id'])) {
     try {
-        // Convertir ID a entero
-        $id = intval($_GET['id']);
-
-        // Verificar si el pastel existe
-        $check_sql = "SELECT id_pastel FROM pasteles WHERE id_pastel = @id";
+        // Primero verificamos si el pastel existe
+        $check_sql = "SELECT id_pastel FROM pasteles WHERE id_pastel = :id";
         $check_stmt = $db->prepare($check_sql);
-        $check_stmt->bindParam('@id', $id, PDO::PARAM_INT);
+        $id = intval($_GET['id']);
+        $check_stmt->bindParam(':id', $id);
         $check_stmt->execute();
 
-        if ($check_stmt->rowCount() === 0) {
+        if($check_stmt->rowCount() === 0) {
             http_response_code(404);
             echo json_encode([
                 "status" => "error",
-                "message" => "No se encontró el pastel con ID: " . $id
+                "message" => "No se encontró el producto con ID: " . $id
             ]);
             return;
         }
@@ -33,30 +31,38 @@ if (isset($_GET['id'])) {
         // Iniciar transacción
         $db->beginTransaction();
 
-        // Eliminar pastel
-        $sql = "DELETE FROM pasteles WHERE id_pastel = @id";
+        $sql = "DELETE FROM pasteles WHERE id_pastel = :id";
         $stmt = $db->prepare($sql);
-        $stmt->bindParam('@id', $id, PDO::PARAM_INT);
-
-        if ($stmt->execute()) {
+        $stmt->bindParam(':id', $id);
+        
+        if($stmt->execute()) {
             $db->commit();
             http_response_code(200);
             echo json_encode([
                 "status" => "success",
-                "message" => "Pastel eliminado exitosamente"
+                "message" => "Producto eliminado exitosamente"
             ]);
         } else {
-            throw new Exception("Error al ejecutar la consulta");
+            $db->rollBack();
+            http_response_code(500);
+            echo json_encode([
+                "status" => "error",
+                "message" => "Error al eliminar el producto"
+            ]);
         }
-    } catch (PDOException $e) {
-        $db->rollBack();
+    } catch(PDOException $e) {
+        if ($db->inTransaction()) {
+            $db->rollBack();
+        }
         http_response_code(500);
         echo json_encode([
             "status" => "error",
             "message" => "Error en la base de datos: " . $e->getMessage()
         ]);
-    } catch (Exception $e) {
-        $db->rollBack();
+    } catch(Exception $e) {
+        if ($db->inTransaction()) {
+            $db->rollBack();
+        }
         http_response_code(500);
         echo json_encode([
             "status" => "error",
@@ -67,7 +73,7 @@ if (isset($_GET['id'])) {
     http_response_code(400);
     echo json_encode([
         "status" => "error",
-        "message" => "ID del pastel no proporcionado"
+        "message" => "ID del producto no proporcionado"
     ]);
 }
 ?>
