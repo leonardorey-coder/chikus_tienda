@@ -446,13 +446,17 @@ async function venderProducto(id, cantidad) {
 }
 
 async function abrirVenta(id, nombre) {
+    // Obtener stock actual antes de mostrar el diálogo
+    const stockActual = parseInt(document.getElementById(`stock-${id}`).textContent);
+    
     const { value: cantidad } = await Swal.fire({
         title: `Vender ${nombre}`,
         input: 'number',
-        inputLabel: 'Cantidad',
+        inputLabel: `Cantidad (Stock disponible: ${stockActual})`,
         inputValue: 1,
         inputAttributes: {
             min: 1,
+            max: stockActual, // Limitar al stock disponible
             step: 1
         },
         showCancelButton: true,
@@ -460,8 +464,12 @@ async function abrirVenta(id, nombre) {
         confirmButtonText: 'Vender',
         confirmButtonColor: '#ffc107',
         inputValidator: (value) => {
-            if (!value || value < 1) {
+            const cantidad = parseInt(value);
+            if (!value || cantidad < 1) {
                 return 'La cantidad debe ser al menos 1';
+            }
+            if (cantidad > stockActual) {
+                return `Solo hay ${stockActual} unidades disponibles`;
             }
         }
     });
