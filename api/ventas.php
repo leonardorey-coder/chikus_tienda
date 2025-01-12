@@ -104,25 +104,27 @@ ORDER BY cantidad_total DESC";
         }
         break;
 
-    case 'POST':
+case 'POST':
         $data = json_decode(file_get_contents("php://input"));
         
         if(isset($data->id_pastel)) {
-            $sql = "SELECT precio FROM pasteles WHERE id_pastel = @id_pastel";
+            // Primero obtener el precio actual del producto
+            $sql = "SELECT precio FROM pasteles WHERE id_pastel = :id_pastel";
             $stmt = $db->prepare($sql);
-            $stmt->bindParam('@id_pastel', $data->id_pastel);
+            $stmt->bindParam(':id_pastel', $data->id_pastel);
             $stmt->execute();
             $producto = $stmt->fetch(PDO::FETCH_ASSOC);
 
             if($producto) {
+                // Registrar la venta
                 $sql = "INSERT INTO ventas (id_pastel, cantidad, precio_unitario) 
-                        VALUES (@id_pastel, @cantidad, @precio_unitario)";
+                        VALUES (:id_pastel, :cantidad, :precio_unitario)";
                 $stmt = $db->prepare($sql);
                 
                 $cantidad = $data->cantidad ?? 1;
-                $stmt->bindParam('@id_pastel', $data->id_pastel);
-                $stmt->bindParam('@cantidad', $cantidad);
-                $stmt->bindParam('@precio_unitario', $producto['precio']);
+                $stmt->bindParam(':id_pastel', $data->id_pastel);
+                $stmt->bindParam(':cantidad', $cantidad);
+                $stmt->bindParam(':precio_unitario', $producto['precio']);
                 
                 if($stmt->execute()) {
                     echo json_encode([
@@ -131,7 +133,7 @@ ORDER BY cantidad_total DESC";
                     ]);
                 } else {
                     echo json_encode([
-                        "status" => "error", 
+                        "status" => "error",
                         "message" => "Error al registrar la venta"
                     ]);
                 }
@@ -143,7 +145,7 @@ ORDER BY cantidad_total DESC";
             }
         } else {
             echo json_encode([
-                "status" => "error", 
+                "status" => "error",
                 "message" => "Datos incompletos"
             ]);
         }
