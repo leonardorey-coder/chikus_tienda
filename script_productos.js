@@ -405,32 +405,6 @@ async function updateStock(id, cantidad, customAmount = false) {
     }
 }
 
-async function abrirVenta(id, nombre) {
-    const { value: cantidad } = await Swal.fire({
-        title: `Vender ${nombre}`,
-        input: 'number',
-        inputLabel: 'Cantidad',
-        inputValue: 1,
-        inputAttributes: {
-            min: 1,
-            step: 1
-        },
-        showCancelButton: true,
-        cancelButtonText: 'Cancelar',
-        confirmButtonText: 'Vender',
-        confirmButtonColor: '#ffc107',
-        inputValidator: (value) => {
-            if (!value || value < 1) {
-                return 'La cantidad debe ser al menos 1';
-            }
-        }
-    });
-
-    if (cantidad) {
-        venderProducto(id, parseInt(cantidad));
-    }
-}
-
 async function venderProducto(id, cantidad) {
     try {
         // Registrar la venta en la base de datos
@@ -476,5 +450,31 @@ async function venderProducto(id, cantidad) {
     } catch (error) {
         console.error('Error:', error);
         showNotification('Error', 'No se pudo registrar la venta', 'error');
+    }
+}
+
+async function abrirVenta(id, nombre) {
+    const { value: cantidad } = await Swal.fire({
+        title: `Vender ${nombre}`,
+        input: 'number',
+        inputLabel: 'Cantidad',
+        inputValue: 1,
+        inputAttributes: {
+            min: 1,
+            step: 1
+        },
+        showCancelButton: true,
+        cancelButtonText: 'Cancelar',
+        confirmButtonText: 'Vender',
+        confirmButtonColor: '#ffc107',
+        inputValidator: (value) => {
+            if (!value || value < 1) {
+                return 'La cantidad debe ser al menos 1';
+            }
+        }
+    });
+
+    if (cantidad) {
+        venderProducto(id, parseInt(cantidad));
     }
 }
