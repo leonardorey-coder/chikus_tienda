@@ -22,7 +22,6 @@ async function loadCategoriasSelect() {
 // Crear pastel
 async function createPastel(event) {
     event.preventDefault();
-    
     const loadingButton = Swal.fire({
         title: 'Guardando producto...',
         allowOutsideClick: false,
@@ -30,40 +29,46 @@ async function createPastel(event) {
             Swal.showLoading();
         }
     });
-    
+
     // Validar que los campos requeridos estén llenos
     const nombre = document.getElementById('pastelNombre').value.trim();
     const categoria = document.getElementById('pastelCategoria').value;
     const precio = document.getElementById('pastelPrecio').value;
     const stock = document.getElementById('pastelStock').value;
-    
+    const archivoInput = document.getElementById('pastelArchivo');
+
     if (!nombre || !categoria || !precio || !stock) {
         loadingButton.close();
         Swal.fire('Error', 'Por favor complete todos los campos requeridos', 'error');
         return;
     }
-    
-    const data = {
-        id_categoria: categoria,
-        nombre: nombre,
-        descripcion: document.getElementById('pastelDescripcion').value.trim(),
-        precio: precio,
-        stock: stock,
-        imagen: document.getElementById('pastelImagen').value.trim()
-    };
 
     try {
+        // Crear FormData para enviar tanto los datos como el archivo
+        const formData = new FormData();
+        formData.append('id_categoria', categoria);
+        formData.append('nombre', nombre);
+        formData.append('descripcion', document.getElementById('pastelDescripcion').value.trim());
+        formData.append('precio', precio);
+        formData.append('stock', stock);
+
+        // Agregar el archivo si existe
+        if (archivoInput.files.length > 0) {
+            const file = archivoInput.files[0];
+            // Generar un nombre único para el archivo
+            const extension = file.name.split('.').pop();
+            const nombreArchivo = `${Date.now()}_${Math.random().toString(36).substring(7)}.${extension}`;
+            formData.append('imagen', file, nombreArchivo);
+        }
+
         const response = await fetch('api/pasteles.php', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(data)
+            body: formData // No incluir Content-Type header, FormData lo establece automáticamente
         });
 
         const result = await response.json();
         loadingButton.close();
-        
+
         if (result.status === 'success') {
             Swal.fire({
                 icon: 'success',
