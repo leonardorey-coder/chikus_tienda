@@ -312,9 +312,7 @@ async function deletePastel(id) {
 
     if (confirmacion.isConfirmed) {
         try {
-            const response = await fetch(`api/pasteles.php?id=${id}`, {
-                method: 'DELETE'
-            });
+            const response = await fetch(`api/borrar_producto.php?id=${id}`);
 
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
