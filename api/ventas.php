@@ -108,42 +108,64 @@ case 'POST':
         $data = json_decode(file_get_contents("php://input"));
         
         if(isset($data->id_pastel)) {
-            // Primero obtener el precio actual del producto
-            $sql = "SELECT precio FROM pasteles WHERE id_pastel = :id_pastel";
-            $stmt = $db->prepare($sql);
-            $stmt->bindParam(':id_pastel', $data->id_pastel);
-            $stmt->execute();
-            $producto = $stmt->fetch(PDO::FETCH_ASSOC);
+            try {
+                // Iniciar transacción
+                $db->beginTransaction();
+                
+                // Verificar stock actual
+                $sql = "SELECT precio, stock FROM pasteles WHERE id_pastel = :id_pastel FOR UPDATE";
+                $stmt = $db->prepare($sql);
+                $stmt->bindParam(':id_pastel', $data->id_pastel);
+                $stmt->execute();
+                $producto = $stmt->fetch(PDO::FETCH_ASSOC);
 
-            if($producto) {
+                if(!$producto) {
+                    throw new Exception("Producto no encontrado");
+                }
+
+                $cantidad = $data->cantidad ?? 1;
+                
+                // Validar stock disponible
+                if($producto['stock'] < $cantidad) {
+                    throw new Exception("Stock insuficiente. Solo hay {$producto['stock']} unidades disponibles");
+                }
+
                 // Registrar la venta
                 $sql = "INSERT INTO ventas (id_pastel, cantidad, precio_unitario) 
                         VALUES (:id_pastel, :cantidad, :precio_unitario)";
                 $stmt = $db->prepare($sql);
                 
-                $cantidad = $data->cantidad ?? 1;
                 $stmt->bindParam(':id_pastel', $data->id_pastel);
                 $stmt->bindParam(':cantidad', $cantidad);
                 $stmt->bindParam(':precio_unitario', $producto['precio']);
+                $stmt->execute();
+
+                // Actualizar stock
+                $nuevoStock = $producto['stock'] - $cantidad;
+                $sql = "UPDATE pasteles SET stock = :stock WHERE id_pastel = :id_pastel";
+                $stmt = $db->prepare($sql);
+                $stmt->bindParam(':stock', $nuevoStock);
+                $stmt->bindParam(':id_pastel', $data->id_pastel);
+                $stmt->execute();
+
+                // Confirmar transacción
+                $db->commit();
                 
-                if($stmt->execute()) {
-                    echo json_encode([
-                        "status" => "success",
-                        "message" => "Venta registrada exitosamente"
-                    ]);
-                } else {
-                    echo json_encode([
-                        "status" => "error",
-                        "message" => "Error al registrar la venta"
-                    ]);
-                }
-            } else {
+                echo json_encode([
+                    "status" => "success",
+                    "message" => "Venta registrada exitosamente"
+                ]);
+                
+            } catch (Exception $e) {
+                $db->rollBack();
+                http_response_code(400);
                 echo json_encode([
                     "status" => "error",
-                    "message" => "Producto no encontrado"
+                    "message" => $e->getMessage()
                 ]);
             }
         } else {
+            http_response_code(400);
             echo json_encode([
                 "status" => "error",
                 "message" => "Datos incompletos"
