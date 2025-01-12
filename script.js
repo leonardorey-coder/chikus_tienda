@@ -306,7 +306,7 @@ async function deletePastel(id) {
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify([{ id_pastel: id }])
+                body: JSON.stringify({ id_pastel: id })
             });
 
             const result = await response.json();
