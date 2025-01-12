@@ -299,21 +299,43 @@ async function updatePastel(event, id) {
 }
 
 async function deletePastel(id) {
-    if (confirm('¿Está seguro de eliminar este producto?')) {
+    const confirmacion = await Swal.fire({
+        title: '¿Está seguro?',
+        text: 'Esta acción no se puede deshacer',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Sí, eliminar',
+        cancelButtonText: 'Cancelar'
+    });
+
+    if (confirmacion.isConfirmed) {
         try {
-            const response = await fetch('api/pasteles.php', {
-                method: 'DELETE',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ id_pastel: id })
+            const response = await fetch(`api/pasteles.php?id=${id}`, {
+                method: 'DELETE'
             });
 
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const contentType = response.headers.get("content-type");
+            if (!contentType || !contentType.includes("application/json")) {
+                throw new Error("La respuesta del servidor no es JSON válido");
+            }
+
             const result = await response.json();
-            alert(result.message);
-            loadPasteles();
+            
+            if (result && result.status === 'success') {
+                await Swal.fire('¡Eliminado!', result.message || 'Producto eliminado con éxito', 'success');
+                loadPasteles();
+            } else {
+                throw new Error(result.message || 'Error al eliminar el producto');
+            }
         } catch (error) {
             console.error('Error:', error);
+            await Swal.fire('Error', 'No se pudo eliminar el producto: ' + error.message, 'error');
         }
     }
 }
