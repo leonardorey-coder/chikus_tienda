@@ -133,30 +133,63 @@ switch($method) {
         }
         break;
 
-    case 'DELETE':
-        $data = json_decode(file_get_contents("php://input"));
-        if(isset($data->id_pastel)) {
-            $sql = "DELETE FROM pasteles WHERE id_pastel = :id";
-            $stmt = $db->prepare($sql);
-            
-            $stmt->bindParam(':id', intval($data->id_pastel));
-            
-            if($stmt->execute()) {
-                echo json_encode(array(
-                    "status" => "success",
-                    "message" => "Pastel eliminado exitosamente."
-                ));
-            } else {
-                echo json_encode(array(
+case 'DELETE':
+        if(isset($_GET['id'])) {
+            try {
+                // Primero verificamos si el pastel existe
+                $check_sql = "SELECT id_pastel FROM pasteles WHERE id_pastel = :id";
+                $check_stmt = $db->prepare($check_sql);
+                $id = intval($_GET['id']);
+                $check_stmt->bindParam(':id', $id);
+                $check_stmt->execute();
+
+                if($check_stmt->rowCount() === 0) {
+                    http_response_code(404);
+                    echo json_encode([
+                        "status" => "error",
+                        "message" => "No se encontró el pastel con ID: " . $id
+                    ]);
+                    break;
+                }
+
+                // Iniciar transacción
+                $db->beginTransaction();
+
+                $sql = "DELETE FROM pasteles WHERE id_pastel = :id";
+                $stmt = $db->prepare($sql);
+                $stmt->bindParam(':id', $id);
+                
+                if($stmt->execute()) {
+                    $db->commit();
+                    http_response_code(200);
+                    echo json_encode([
+                        "status" => "success",
+                        "message" => "Pastel eliminado exitosamente"
+                    ]);
+                } else {
+                    throw new Exception("Error al ejecutar la consulta");
+                }
+            } catch(PDOException $e) {
+                $db->rollBack();
+                http_response_code(500);
+                echo json_encode([
                     "status" => "error",
-                    "message" => "Error al eliminar el pastel."
-                ));
+                    "message" => "Error en la base de datos: " . $e->getMessage()
+                ]);
+            } catch(Exception $e) {
+                $db->rollBack();
+                http_response_code(500);
+                echo json_encode([
+                    "status" => "error",
+                    "message" => "Error: " . $e->getMessage()
+                ]);
             }
         } else {
-            echo json_encode(array(
+            http_response_code(400);
+            echo json_encode([
                 "status" => "error",
-                "message" => "ID del pastel no proporcionado."
-            ));
+                "message" => "ID del pastel no proporcionado"
+            ]);
         }
         break;
 }
