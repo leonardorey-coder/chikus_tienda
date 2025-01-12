@@ -35,49 +35,118 @@ switch($method) {
         break;
 
     case 'POST':
-        // Leer datos JSON de la solicitud
-        $data = json_decode(file_get_contents("php://input"));
-        
-        if(isset($data->id_categoria) && isset($data->nombre) && 
-           isset($data->precio) && isset($data->stock)) {
+            // Manejar la subida de archivos
+            $uploadDir = '../uploads/';
             
-            $sql = "INSERT INTO pasteles (id_categoria, nombre, descripcion, precio, stock, imagen) 
-                    VALUES (:id_categoria, :nombre, :descripcion, :precio, :stock, :imagen)";
-            $stmt = $db->prepare($sql);
-            
-            // Convertir valores a los tipos correctos
-            $id_categoria = intval($data->id_categoria);
-            $nombre = $data->nombre;
-            $descripcion = $data->descripcion ?? '';
-            $precio = floatval($data->precio);
-            $stock = intval($data->stock);
-            $imagen = $data->imagen ?? '';
-            
-            $stmt->bindParam(':id_categoria', $id_categoria);
-            $stmt->bindParam(':nombre', $nombre);
-            $stmt->bindParam(':descripcion', $descripcion);
-            $stmt->bindParam(':precio', $precio);
-            $stmt->bindParam(':stock', $stock);
-            $stmt->bindParam(':imagen', $imagen);
-            
-            if($stmt->execute()) {
-                echo json_encode(array(
-                    "status" => "success",
-                    "message" => "Producto creado exitosamente"
-                ));
-            } else {
-                echo json_encode(array(
-                    "status" => "error",
-                    "message" => "Error al crear el producto"
-                ));
+            // Verificar y crear directorio con manejo de errores
+            if (!file_exists($uploadDir)) {
+                if (!mkdir($uploadDir, 0777, true)) {
+                    echo json_encode([
+                        "status" => "error",
+                        "message" => "No se pudo crear el directorio de uploads"
+                    ]);
+                    exit;
+                }
             }
-        } else {
-            echo json_encode(array(
-                "status" => "error",
-                "message" => "Datos incompletos"
-            ));
-        }
-        break;
+    
+            $rutaImagen = null;
+            if (isset($_FILES['imagen'])) {
+                // Verificar errores específicos de la subida
+                switch ($_FILES['imagen']['error']) {
+                    case UPLOAD_ERR_OK:
+                        break;
+                    case UPLOAD_ERR_INI_SIZE:
+                        echo json_encode(["status" => "error", "message" => "El archivo excede el tamaño máximo permitido"]);
+                        exit;
+                    case UPLOAD_ERR_FORM_SIZE:
+                        echo json_encode(["status" => "error", "message" => "El archivo excede el tamaño máximo del formulario"]);
+                        exit;
+                    case UPLOAD_ERR_PARTIAL:
+                        echo json_encode(["status" => "error", "message" => "El archivo se subió parcialmente"]);
+                        exit;
+                    case UPLOAD_ERR_NO_FILE:
+                        echo json_encode(["status" => "error", "message" => "No se seleccionó ningún archivo"]);
+                        exit;
+                    default:
+                        echo json_encode(["status" => "error", "message" => "Error desconocido al subir el archivo"]);
+                        exit;
+                }
+    
+                $extension = strtolower(pathinfo($_FILES['imagen']['name'], PATHINFO_EXTENSION));
+                
+                // Verificar extensión permitida
+                $allowedTypes = ['jpg', 'jpeg', 'png', 'gif'];
+                if (!in_array($extension, $allowedTypes)) {
+                    echo json_encode([
+                        "status" => "error",
+                        "message" => "Tipo de archivo no permitido. Solo se permiten: " . implode(', ', $allowedTypes)
+                    ]);
+                    exit;
+                }
+    
+                $nombreArchivo = uniqid() . '_' . time() . '.' . $extension;
+                $rutaImagen = 'uploads/' . $nombreArchivo;
+                $rutaCompletaArchivo = $uploadDir . $nombreArchivo;
+    
+                // Intentar mover el archivo con manejo de errores específicos
+                if (!is_writable($uploadDir)) {
+                    echo json_encode([
+                        "status" => "error",
+                        "message" => "El directorio de uploads no tiene permisos de escritura"
+                    ]);
+                    exit;
+                }
+    
+                if (!move_uploaded_file($_FILES['imagen']['tmp_name'], $rutaCompletaArchivo)) {
+                    echo json_encode([
+                        "status" => "error",
+                        "message" => "Error al mover el archivo. Error: " . error_get_last()['message']
+                    ]);
+                    exit;
+                }
+            }
+    
+            // Resto del código POST igual...
+            if(isset($_POST['id_categoria']) && isset($_POST['nombre']) && 
+               isset($_POST['precio']) && isset($_POST['stock'])) {
+                
+                $sql = "INSERT INTO pasteles (id_categoria, nombre, descripcion, precio, stock, imagen) 
+                        VALUES (:id_categoria, :nombre, :descripcion, :precio, :stock, :imagen)";
+                $stmt = $db->prepare($sql);
+                
+                // Convertir valores a los tipos correctos
+                $id_categoria = intval($_POST['id_categoria']);
+                $nombre = $_POST['nombre'];
+                $descripcion = $_POST['descripcion'] ?? '';
+                $precio = floatval($_POST['precio']);
+                $stock = intval($_POST['stock']);
+                
+                $stmt->bindParam(':id_categoria', $id_categoria);
+                $stmt->bindParam(':nombre', $nombre);
+                $stmt->bindParam(':descripcion', $descripcion);
+                $stmt->bindParam(':precio', $precio);
+                $stmt->bindParam(':stock', $stock);
+                $stmt->bindParam(':imagen', $rutaImagen);
+                
+                if($stmt->execute()) {
+                    echo json_encode([
+                        "status" => "success",
+                        "message" => "Producto creado exitosamente",
+                        "rutaImagen" => $rutaImagen
+                    ]);
+                } else {
+                    echo json_encode([
+                        "status" => "error",
+                        "message" => "Error al crear el producto en la base de datos"
+                    ]);
+                }
+            } else {
+                echo json_encode([
+                    "status" => "error",
+                    "message" => "Datos incompletos en el formulario"
+                ]);
+            }
+            break;
 
     case 'PUT':
         // Leer datos JSON de la solicitud
