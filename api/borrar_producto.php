@@ -10,9 +10,12 @@ include_once '../config/database.php';
 $database = new Database();
 $db = $database->getConnection();
 
+// Activar el modo de errores de PDO para lanzar excepciones
+$db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
 if(isset($_GET['id'])) {
     try {
-        // Primero verificamos si el pastel existe
+        // Primero verificamos si el producto existe
         $check_sql = "SELECT id_pastel FROM pasteles WHERE id_pastel = :id";
         $check_stmt = $db->prepare($check_sql);
         $id = intval($_GET['id']);
@@ -28,22 +31,21 @@ if(isset($_GET['id'])) {
             return;
         }
 
-        // Iniciar transacción
-        $db->beginTransaction();
-
+        // Ejecutar la eliminación sin transacción
         $sql = "DELETE FROM pasteles WHERE id_pastel = :id";
         $stmt = $db->prepare($sql);
         $stmt->bindParam(':id', $id);
-        
-        if($stmt->execute()) {
-            $db->commit();
+
+        $stmt->execute();
+
+        if($stmt->rowCount() > 0) {
             http_response_code(200);
             echo json_encode([
                 "status" => "success",
                 "message" => "Producto eliminado exitosamente"
             ]);
         } else {
-            $db->rollBack();
+            // Si no se afectó ninguna fila, puede haber ocurrido un error
             http_response_code(500);
             echo json_encode([
                 "status" => "error",
@@ -51,18 +53,12 @@ if(isset($_GET['id'])) {
             ]);
         }
     } catch(PDOException $e) {
-        if ($db->inTransaction()) {
-            $db->rollBack();
-        }
         http_response_code(500);
         echo json_encode([
             "status" => "error",
             "message" => "Error en la base de datos: " . $e->getMessage()
         ]);
     } catch(Exception $e) {
-        if ($db->inTransaction()) {
-            $db->rollBack();
-        }
         http_response_code(500);
         echo json_encode([
             "status" => "error",
