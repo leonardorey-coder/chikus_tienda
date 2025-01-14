@@ -542,14 +542,6 @@ async function venderProducto(id, cantidad) {
         if (ventaResult.status === 'success') {
             // Actualizar el stock
             await updateStock(id, -cantidad);
-            
-            // Registrar en localStorage para el ranking temporal
-            const ventas = JSON.parse(localStorage.getItem('productosVendidos') || '[]');
-            // Agregar una entrada por cada unidad vendida
-            for (let i = 0; i < cantidad; i++) {
-                ventas.push({ id: id, fecha: new Date().toISOString() });
-            }
-            localStorage.setItem('productosVendidos', JSON.stringify(ventas));
 
             // Actualizar la interfaz si estamos en el dashboard
             if (window.location.pathname.endsWith('index.html')) {
