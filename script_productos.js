@@ -1,3 +1,20 @@
+async function loadCategoriasSelect() {
+    try {
+        const response = await fetch('api/categorias.php');
+        const categorias = await response.json();
+        const select = document.getElementById('pastelCategoria');
+        select.innerHTML = '';
+        categorias.forEach(c => {
+            const option = document.createElement('option');
+            option.value = c.id_categoria;
+            option.textContent = c.nombre;
+            select.appendChild(option);
+        });
+    } catch (error) {
+        console.error('Error cargando categorías:', error);
+    }
+}
+
 async function createPastel(event) {
     event.preventDefault();
     const loadingButton = Swal.fire({
