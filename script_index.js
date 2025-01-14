@@ -334,12 +334,19 @@ async function actualizarHistorialVentas() {
 // Agregar función para actualización automática a medianoche
 function programarActualizacionMedianoche() {
     const ahora = new Date();
+    
+    // Ajustar la hora para la zona horaria local
     const medianoche = new Date(
         ahora.getFullYear(),
         ahora.getMonth(),
         ahora.getDate() + 1, // siguiente día
         0, 0, 0 // 00:00:00
     );
+    
+    // Asegurarse de que la medianoche sea la próxima medianoche local
+    if (medianoche <= ahora) {
+        medianoche.setDate(medianoche.getDate() + 1);
+    }
     
     const tiempoHastaMedianoche = medianoche - ahora;
 
