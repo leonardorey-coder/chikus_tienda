@@ -11,6 +11,10 @@ function showNotification(title, message, type = 'success') {
     });
 }
 
+// Variables globales para el stock bajo
+let stockBajoCompleto = [];
+let stockBajoMostrados = 6;
+
 // Función para actualizar el dashboard
 async function updateDashboard() {
     try {
@@ -54,16 +58,30 @@ async function updateDashboard() {
         const stockBajo = pasteles.filter(p => p.stock < 5)
             .sort((a, b) => a.stock - b.stock);
         
-        const stockBajoHTML = stockBajo.map(p => `
-            <div class="list-group-item d-flex justify-content-between align-items-center">
-                <div>
-                    <h6 class="mb-0">${p.nombre}</h6>
-                    <small class="text-muted">${p.categoria_nombre}</small>
-                </div>
-                <span class="badge bg-danger rounded-pill">${p.stock}</span>
+        stockBajoCompleto = stockBajo; // Guardar lista completa
+        const stockBajoAMostrar = stockBajo.slice(0, stockBajoMostrados);
+
+        const stockBajoHTML = `
+            <div id="stockBajoLista">
+                ${stockBajoAMostrar.map(p => `
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="mb-0">${p.nombre}</h6>
+                            <small class="text-muted">${p.categoria_nombre}</small>
+                        </div>
+                        <span class="badge bg-danger rounded-pill">${p.stock}</span>
+                    </div>
+                `).join('')}
             </div>
-        `).join('');
-        
+            ${stockBajo.length > stockBajoMostrados ? `
+                <div class="text-center mt-3">
+                    <button class="btn btn-sm btn-outline-primary" onclick="cargarMasStockBajo()">
+                        Cargar más <i class="fas fa-chevron-down ms-1"></i>
+                    </button>
+                </div>
+            ` : ''}
+        `;
+
         document.getElementById('stockBajo').innerHTML = stockBajoHTML || 
             '<p class="text-center text-muted my-3">No hay productos con stock bajo</p>';
 
@@ -471,7 +489,7 @@ async function toggleHistorialCompleto() {
 
 async function cargarVentasPorDia(fecha, targetId) {
     try {
-        const response = await fetch(`api/ventas.php?fecha=${encodeURIComponent(fecha)}`);
+        const response = await fetch(`api/ventas.php?fecha=${fecha}`);
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
@@ -549,6 +567,32 @@ function formatearHora(fecha) {
         hour: '2-digit',
         minute: '2-digit'
     });
+}
+
+// Agregar esta nueva función después de updateDashboard
+function cargarMasStockBajo() {
+    stockBajoMostrados += 6; // Incrementar en 6 más productos
+    
+    const stockBajoAMostrar = stockBajoCompleto.slice(0, stockBajoMostrados);
+    const stockBajoListaHTML = stockBajoAMostrar.map(p => `
+        <div class="list-group-item d-flex justify-content-between align-items-center">
+            <div>
+                <h6 class="mb-0">${p.nombre}</h6>
+                <small class="text-muted">${p.categoria_nombre}</small>
+            </div>
+            <span class="badge bg-danger rounded-pill">${p.stock}</span>
+        </div>
+    `).join('');
+
+    document.getElementById('stockBajoLista').innerHTML = stockBajoListaHTML;
+
+    // Ocultar el botón si ya no hay más productos para mostrar
+    if (stockBajoMostrados >= stockBajoCompleto.length) {
+        const botonContainer = document.querySelector('#stockBajo .text-center');
+        if (botonContainer) {
+            botonContainer.remove();
+        }
+    }
 }
 
 // Cargar datos iniciales para index
