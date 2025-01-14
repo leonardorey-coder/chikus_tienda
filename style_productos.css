@@ -196,6 +196,32 @@
             .stock-control {
                 font-size: 0.8rem;
             }
+                        .quick-edit-fields input.form-control,
+            .quick-edit-fields textarea.form-control,
+            .stock-control input.form-control {
+                border: 1px solid #dee2e6;
+            }
+
+            .quick-edit-fields input.form-control:focus,
+            .quick-edit-fields textarea.form-control:focus,
+            .stock-control input.form-control:focus {
+                border-color: #86b7fe;
+                box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+            }
+
+            /* Asegurar que los inputs dentro del modal también tengan borde */
+            #editProductModal .modal-body input.form-control,
+            #editProductModal .modal-body textarea.form-control,
+            #editProductModal .modal-body select.form-control {
+                border: 1px solid #dee2e6;
+            }
+
+            #editProductModal .modal-body input.form-control:focus,
+            #editProductModal .modal-body textarea.form-control:focus,
+            #editProductModal .modal-body select.form-control:focus {
+                border-color: #86b7fe;
+                box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+            }
         }
 
         /* Estilos del buscador unificados para móvil y escritorio */
