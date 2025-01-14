@@ -219,9 +219,12 @@ function renderProducts(products) {
                         ${productos.map(pastel => `
                             <div class="producto-card me-3" style="min-width: 280px;">
                                 <div class="card h-100">
-                                    <img src="${pastel.imagen || 'https://via.placeholder.com/300x200?text=Sin+Imagen'}" 
-                                         class="card-img-top" alt="${pastel.nombre}"
-                                         style="height: 180px; object-fit: cover;">
+                                    <div class="image-placeholder" style="height: 180px; background: #f5f5f5;">
+                                        <img data-src="${pastel.imagen || 'https://via.placeholder.com/300x200?text=Sin+Imagen'}" 
+                                             class="card-img-top lazy-image" 
+                                             alt="${pastel.nombre}"
+                                             style="height: 180px; object-fit: cover; opacity: 0; transition: opacity 0.3s ease;">
+                                    </div>
                                     <div class="card-body">
                                         <h5 class="card-title fs-6">${pastel.nombre}</h5>
                                         <p class="card-text small mb-2">${pastel.descripcion || 'Sin descripción'}</p>
@@ -290,9 +293,12 @@ function renderProducts(products) {
             col.className = 'col-md-4 mb-4';
             col.innerHTML = `
                 <div class="card h-100 pastel-card">
-                    <img src="${pastel.imagen || 'https://via.placeholder.com/300x200?text=Sin+Imagen'}" 
-                         class="card-img-top pastel-image" 
-                         alt="${pastel.nombre}">
+                    <div class="image-placeholder" style="height: 200px; background: #f5f5f5;">
+                        <img data-src="${pastel.imagen || 'https://via.placeholder.com/300x200?text=Sin+Imagen'}" 
+                             class="card-img-top pastel-image lazy-image" 
+                             alt="${pastel.nombre}"
+                             style="opacity: 0; transition: opacity 0.3s ease;">
+                    </div>
                     <div class="card-body">
                         <h5 class="card-title">${pastel.nombre}</h5>
                         <p class="card-text">${pastel.descripcion || 'Sin descripción'}</p>
@@ -350,6 +356,9 @@ function renderProducts(products) {
             pastelesList.appendChild(col);
         });
     }
+
+    // Inicializar lazy loading después de renderizar
+    initLazyLoading();
 
     // Configurar modo edición rápida
     const modoEdicionRapida = document.getElementById('modoEdicionRapida');
@@ -596,4 +605,27 @@ async function abrirVenta(id, nombre) {
     if (cantidad) {
         venderProducto(id, parseInt(cantidad));
     }
+}
+
+// Agregar esta nueva función para manejar el lazy loading
+function initLazyLoading() {
+    const imageObserver = new IntersectionObserver((entries, observer) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                const img = entry.target;
+                img.src = img.dataset.src;
+                img.onload = () => {
+                    img.style.opacity = '1';
+                };
+                observer.unobserve(img);
+            }
+        });
+    }, {
+        rootMargin: '50px 0px',
+        threshold: 0.1
+    });
+
+    document.querySelectorAll('.lazy-image').forEach(img => {
+        imageObserver.observe(img);
+    });
 }
