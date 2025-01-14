@@ -47,11 +47,11 @@ $stmt->bindParam(':fecha', $fecha);
 $stmt->execute();
                 
             } else if ($porDia) {
-                $sql = "SELECT v.*, p.nombre, p.descripcion, p.imagen 
-                        FROM ventas v 
-                        JOIN pasteles p ON v.id_pastel = p.id_pastel 
-                        WHERE CAST(v.fecha_venta AS DATE) = CAST(GETDATE() AS DATE)
-                        ORDER BY v.fecha_venta DESC";
+                $sql = "SELECT v.*, p.nombre, p.descripcion, p.imagen
+FROM ventas v
+JOIN pasteles p ON v.id_pastel = p.id_pastel
+WHERE CAST(DATEADD(HOUR, -5, v.fecha_venta) AS DATE) = CAST(GETDATE() AS DATE)
+ORDER BY v.fecha_venta DESC";
                 $stmt = $db->prepare($sql);
                 $stmt->execute();
                 
